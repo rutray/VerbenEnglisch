@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training der unregelmäßigen Verben</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --primary-dark: #3730a3;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --bg-color: #f3f4f6;
+            --surface: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--surface);
+            border-radius: 24px;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #e0e7ff;
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background-color: var(--surface);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 20px 15px;
+            background: none;
+            border: none;
+            border-bottom: 4px solid transparent;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background-color: #f9fafb;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .content-section {
+            padding: 30px;
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        h2.section-title {
+            text-align: center;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            max-width: 400px;
+            margin: 0 auto 20px auto;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .stat-progress { color: var(--text-muted); }
+        .stat-known { color: var(--secondary); }
+        .stat-unknown { color: var(--danger); }
+
+        .flashcard-wrapper {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto 30px auto;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 280px;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            font-size: 2.5rem;
+            text-align: center;
+            padding: 20px;
+            border: 2px solid var(--border);
+        }
+
+        .flashcard-front {
+            background-color: white;
+            color: var(--text-main);
+        }
+
+        .flashcard-back {
+            background-color: var(--primary-light);
+            color: white;
+            transform: rotateY(180deg);
+            border: none;
+            font-size: 1.8rem; /* Mniejsza czcionka dla niemieckich znaczeń */
+        }
+
+        .click-hint {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:active { transform: translateY(2px); }
+
+        .btn-danger {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .btn-danger:hover { background-color: #fecaca; }
+
+        .btn-success {
+            background-color: #d1fae5;
+            color: #047857;
+        }
+        .btn-success:hover { background-color: #a7f3d0; }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 25px;
+            width: auto;
+            margin: 0 auto;
+        }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+        }
+        .btn-secondary:hover { background-color: #d1d5db; }
+
+        .end-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+        .end-screen h3 { color: #1e40af; font-size: 1.8rem; margin-bottom: 10px; }
+        .end-screen p { color: #2563eb; margin-bottom: 25px; font-size: 1.1rem; }
+
+
+        .table-header-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 640px) {
+            .table-header-controls {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .score-display {
+            background-color: #e0e7ff;
+            color: var(--primary-dark);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            border: 1px solid #c7d2fe;
+            display: inline-block;
+        }
+        .score-number { font-size: 1.4rem; }
+
+        .table-description { color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem; }
+
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            min-width: 600px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f9fafb;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        th:first-child, td:first-child { text-align: left; }
+
+        tr:nth-child(even) { background-color: #f9fafb; }
+        
+        .verb-base { font-weight: bold; font-size: 1.1rem; color: var(--text-main); }
+        .verb-translation { display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+        .reveal-cell {
+            position: relative;
+            height: 60px;
+            vertical-align: middle;
+            transition: background-color 0.3s;
+        }
+
+        .reveal-cell.loading { background-color: #ecfdf5; }
+        .reveal-cell.revealed { background-color: #eff6ff; }
+
+        .reveal-dot {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background-color: var(--secondary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.4);
+        }
+
+        .reveal-dot:hover {
+            transform: scale(1.15);
+            background-color: #059669;
+        }
+
+        .revealed-text {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease-in;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .revealed-text.show {
+            display: inline-block;
+            opacity: 1;
+        }
+
+        /* Animacja powiększania punktów */
+        .score-pop {
+            animation: pop 0.4s ease-out;
+            color: var(--secondary);
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <header>
+            <h1>Training der unregelmäßigen Verben</h1>
+            <p>Übe die markierten Verben aus deinem Buch.</p>
+        </header>
+
+        <div class="tabs">
+            <button id="tab-flashcards" class="tab-btn active" onclick="switchTab('flashcards')">
+                Teil 1: Bedeutung
+            </button>
+            <button id="tab-table" class="tab-btn" onclick="switchTab('table')">
+                Teil 2: Formen (Tabelle)
+            </button>
+        </div>
+
+        <div class="content-section active" id="section-flashcards">
+            <h2 class="section-title">Überprüfe die Bedeutung der Wörter</h2>
+            
+            <div class="stats-bar">
+                <span class="stat-progress">Fortschritt: <span id="fc-progress">1 / X</span></span>
+                <span class="stat-known">Ich weiß es: <span id="fc-known">0</span></span>
+                <span class="stat-unknown">Ich weiß es nicht: <span id="fc-unknown">0</span></span>
+            </div>
+
+            <div class="flashcard-wrapper" id="fc-wrapper">
+                <div id="flashcard" class="flashcard" onclick="flipCard()">
+                    <div class="flashcard-face flashcard-front">
+                        <span id="fc-word-front">Laden...</span>
+                    </div>
+                    <div class="flashcard-face flashcard-back">
+                        <span id="fc-word-back">Laden...</span>
+                    </div>
+                </div>
+                <p class="click-hint">Klicke auf die Karte, um sie umzudrehen</p>
+            </div>
+
+            <div class="action-buttons" id="fc-actions">
+                <button onclick="handleFlashcardResult(false)" class="btn btn-danger">
+                    <span>✗</span> I don't know!
+                </button>
+                <button onclick="handleFlashcardResult(true)" class="btn btn-success">
+                    <span>✓</span> I know!
+                </button>
+            </div>
+            
+            <div id="fc-end-screen" class="end-screen">
+                <h3>Tolle Arbeit!</h3>
+                <p>Du hast alle Wörter durchgearbeitet.</p>
+                <button onclick="resetFlashcards()" class="btn btn-primary">Nochmal beginnen</button>
+            </div>
+        </div>
+
+        <div class="content-section" id="section-table">
+            <div class="table-header-controls">
+                <h2 class="section-title" style="margin:0;">Errate die Verbformen</h2>
+                <div class="score-display">
+                    Punkte: <span id="table-score" class="score-number">0</span>
+                </div>
+            </div>
+            
+            <p class="table-description">Klicke auf den grünen Punkt, um nach kurzer Zeit die richtige Form zu sehen. Rate sie, bevor du klickst!</p>
+            
+            <div style="text-align: right; margin-bottom: 15px;">
+                <button onclick="resetTable()" class="btn btn-secondary">Tabelle zurücksetzen</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Present (Bedeutung)</th>
+                            <th>Past simple</th>
+                            <th>Past participle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verbs-table-body">
+                        <!-- Generowane przez JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const verbsData = [
+            { base: "become", past: "became", participle: "become", translation: "werden" },
+            { base: "bend", past: "bent", participle: "bent", translation: "beugen; biegen" },
+            { base: "buy", past: "bought", participle: "bought", translation: "kaufen" },
+            { base: "can", past: "could", participle: "been able to", translation: "können" },
+            { base: "catch", past: "caught", participle: "caught", translation: "fangen" },
+            { base: "come", past: "came", participle: "come", translation: "kommen" },
+            { base: "do", past: "did", participle: "done", translation: "tun, machen" },
+            { base: "drive", past: "drove", participle: "driven", translation: "fahren; treiben" },
+            { base: "eat", past: "ate", participle: "eaten", translation: "essen" },
+            { base: "fight", past: "fought", participle: "fought", translation: "kämpfen" },
+            { base: "find", past: "found", participle: "found", translation: "finden" },
+            { base: "freeze", past: "froze", participle: "frozen", translation: "einfrieren; erstarren" },
+            { base: "get", past: "got", participle: "got", translation: "bekommen; werden" },
+            { base: "get up", past: "got up", participle: "got up", translation: "aufstehen" },
+            { base: "give", past: "gave", participle: "given", translation: "geben" },
+            { base: "go", past: "went", participle: "gone", translation: "gehen; fahren" },
+            { base: "have", past: "had", participle: "had", translation: "haben" },
+            { base: "hear", past: "heard", participle: "heard", translation: "hören" },
+            { base: "hide", past: "hid", participle: "hidden", translation: "(sich) verstecken" },
+            { base: "hold", past: "held", participle: "held", translation: "(fest-)halten" },
+            { base: "throw", past: "threw", participle: "thrown", translation: "werfen" }, 
+            
+            // Prawa kolumna z obrazka
+            { base: "leave", past: "left", participle: "left", translation: "verlassen" },
+            { base: "make", past: "made", participle: "made", translation: "machen; herstellen" },
+            { base: "meet", past: "met", participle: "met", translation: "treffen; kennenlernen" },
+            { base: "pay", past: "paid", participle: "paid", translation: "(be)zahlen" },
+            { base: "put", past: "put", participle: "put", translation: "legen; setzen; stellen" },
+            { base: "read", past: "read [red]", participle: "read [red]", translation: "lesen" },
+            { base: "ride", past: "rode", participle: "ridden", translation: "reiten; (Rad) fahren" },
+            { base: "run", past: "ran", participle: "run", translation: "laufen; rennen" },
+            { base: "say", past: "said", participle: "said", translation: "sagen" },
+            { base: "see", past: "saw", participle: "seen", translation: "sehen" },
+            { base: "sell", past: "sold", participle: "sold", translation: "verkaufen" },
+            { base: "sit", past: "sat", participle: "sat", translation: "sitzen" },
+            { base: "sleep", past: "slept", participle: "slept", translation: "schlafen" },
+            { base: "spend", past: "spent", participle: "spent", translation: "verbringen; ausgeben" },
+            { base: "swim", past: "swam", participle: "swum", translation: "schwimmen" },
+            { base: "take", past: "took", participle: "taken", translation: "nehmen; bringen" },
+            { base: "tell", past: "told", participle: "told", translation: "sagen; erzählen" },
+            { base: "think", past: "thought", participle: "thought", translation: "denken; glauben" }
+        ];
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+
+            document.getElementById('tab-' + tabId).classList.add('active');
+            document.getElementById('section-' + tabId).classList.add('active');
+        }
+
+        let currentFlashcardIndex = 0;
+        let knownCount = 0;
+        let unknownCount = 0;
+        let shuffledVerbsForFlashcards = [];
+
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function initFlashcards() {
+            shuffledVerbsForFlashcards = shuffleArray([...verbsData]);
+            currentFlashcardIndex = 0;
+            knownCount = 0;
+            unknownCount = 0;
+            
+            document.getElementById('fc-end-screen').style.display = 'none';
+            document.getElementById('fc-wrapper').style.display = 'block';
+            document.getElementById('fc-actions').style.display = 'flex';
+            
+            updateFlashcardUI();
+        }
+
+        function updateFlashcardUI() {
+            const wordFront = document.getElementById('fc-word-front');
+            const wordBack = document.getElementById('fc-word-back');
+            const progress = document.getElementById('fc-progress');
+            const flashcard = document.getElementById('flashcard');
+
+            // Odwróć z powrotem na przód
+            flashcard.classList.remove('is-flipped');
+
+            if (currentFlashcardIndex < shuffledVerbsForFlashcards.length) {
+                const currentVerb = shuffledVerbsForFlashcards[currentFlashcardIndex];
+                
+                // Czekamy chwilę z aktualizacją tekstu, by fiszka zdążyła się odwrócić zasłaniając treść
+                setTimeout(() => {
+                    wordFront.textContent = currentVerb.base;
+                    wordBack.textContent = currentVerb.translation;
+                    progress.textContent = `${currentFlashcardIndex + 1} / ${shuffledVerbsForFlashcards.length}`;
+                }, 150);
+            } else {
+                showFlashcardEndScreen();
+            }
+
+            document.getElementById('fc-known').textContent = knownCount;
+            document.getElementById('fc-unknown').textContent = unknownCount;
+        }
+
+        function flipCard() {
+            document.getElementById('flashcard').classList.toggle('is-flipped');
+        }
+
+        function handleFlashcardResult(isKnown) {
+            if (currentFlashcardIndex >= shuffledVerbsForFlashcards.length) return;
+
+            if (isKnown) {
+                knownCount++;
+            } else {
+                unknownCount++;
+            }
+            currentFlashcardIndex++;
+            updateFlashcardUI();
+        }
+
+        function showFlashcardEndScreen() {
+            document.getElementById('fc-wrapper').style.display = 'none';
+            document.getElementById('fc-actions').style.display = 'none';
+            document.getElementById('fc-end-screen').style.display = 'block';
+            document.getElementById('fc-progress').textContent = `${shuffledVerbsForFlashcards.length} / ${shuffledVerbsForFlashcards.length}`;
+        }
+
+        function resetFlashcards() {
+            initFlashcards();
+        }
+
+        let tableScore = 0;
+
+        function initTable() {
+            const tbody = document.getElementById('verbs-table-body');
+            tbody.innerHTML = ''; 
+            tableScore = 0;
+            updateScoreDisplay(false);
+
+            // Sortujemy alfabetycznie dla wygody w tabeli
+            const sortedVerbs = [...verbsData].sort((a,b) => a.base.localeCompare(b.base));
+
+            sortedVerbs.forEach((verb) => {
+                const tr = document.createElement('tr');
+
+                // Komórka 1: Baza + Tłumaczenie
+                const tdBase = document.createElement('td');
+                tdBase.innerHTML = `<span class="verb-base">${verb.base}</span><span class="verb-translation">${verb.translation}</span>`;
+                
+                // Komórka 2 i 3: Past i Participle z kropkami
+                const tdPast = createRevealingCell(verb.past);
+                const tdPart = createRevealingCell(verb.participle);
+
+                tr.appendChild(tdBase);
+                tr.appendChild(tdPast);
+                tr.appendChild(tdPart);
+                tbody.appendChild(tr);
+            });
+        }
+
+        function createRevealingCell(word) {
+            const td = document.createElement('td');
+            td.className = 'reveal-cell';
+
+            const dot = document.createElement('span');
+            dot.className = 'reveal-dot';
+            
+            const textSpan = document.createElement('span');
+            textSpan.className = 'revealed-text';
+            textSpan.textContent = word;
+
+            dot.addEventListener('click', function() {
+                if(this.style.display === 'none') return;
+
+                this.style.display = 'none';
+                td.classList.add('loading');
+
+                setTimeout(() => {
+                    textSpan.classList.add('show');
+                    td.classList.remove('loading');
+                    td.classList.add('revealed');
+                    
+                    tableScore += 1;
+                    updateScoreDisplay(true);
+                }, 500); 
+            });
+
+            td.appendChild(dot);
+            td.appendChild(textSpan);
+            return td;
+        }
+
+        function updateScoreDisplay(animate = false) {
+            const scoreEl = document.getElementById('table-score');
+            scoreEl.textContent = tableScore;
+            
+            if(animate) {
+                scoreEl.classList.remove('score-pop');
+                // Trigger reflow to restart animation
+                void scoreEl.offsetWidth; 
+                scoreEl.classList.add('score-pop');
+            }
+        }
+
+        function resetTable() {
+            initTable();
+        }
+
+        window.onload = function() {
+            initFlashcards();
+            initTable();
+        };
+
+    </script>
+</body>
+</html>
